@@ -1,0 +1,34 @@
+go 1.21.4
+
+use (
+	"./Task2(DB)"
+	./01Hello
+	./02Variables
+	./03UserInput
+	./04Pointers
+	./05Conversions
+	./06Arrays
+	./07Slices
+	./08Loops
+	./09Booleans&Conditionals
+	./10Time
+	./11SwitchCase
+	./12MapsEX
+	./13StructEx
+	./14FunctionsEx
+	./16PackagesEx
+	./17Defer
+	./18Files
+	./19Interfaces
+	./20GoRoutines
+	./21WaitGroups
+	./22MutexEx
+	./23ChannelsEx
+	./23ChannelsEx1
+	./24MongoAPIEx
+	./PanicRecoverEx
+	./RestEXApi
+	./URLExample
+	./webRequestEx
+
+)

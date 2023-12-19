@@ -1,0 +1,8 @@
+# This is a basic YAML document
+name: Anu Shulammite
+age: 22
+address:
+  street: V Street
+  city: Tirupati
+  state: AP
+  zip: 517501
