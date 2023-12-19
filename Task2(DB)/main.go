@@ -76,7 +76,7 @@ func main() {
     var db Database
 
     // Connect to MongoDB Atlas
-    clientOptions := options.Client().ApplyURI("mongodb+srv://Anu_Shulammite:Anu20010912@cluster0.kwjddrn.mongodb.net/")
+    clientOptions := options.Client().ApplyURI("mongodb+srv://Anu_Shulammite:<Password>@cluster0.kwjddrn.mongodb.net/")
     client, err := mongo.Connect(context.TODO(), clientOptions)
     if err != nil {
         log.Fatal(err)
@@ -94,7 +94,7 @@ func main() {
     db.Update("Silence","When Breath becomes Air")
 
     // Connect to MySQL
-    sqlDB, err := sql.Open("mysql", "root:Anu20010912@tcp(127.0.0.1:3306)/go_training")
+    sqlDB, err := sql.Open("mysql", "root:<Password>@tcp(127.0.0.1:3306)/go_training")
     if err != nil {
         log.Fatal(err)
     }
