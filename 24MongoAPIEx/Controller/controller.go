@@ -72,6 +72,23 @@ func deleteAllMovies(){
 }
 
 //get all movies
-func getAllMovies(){
+func getAllMovies()[]primitive.M{
+	cur,err:=collection.Find(context.Background(),bson.D{{}})
+	if err !=nil{
+		log.Fatal(err)
+	}
+	defer cur.Close(context.TODO())
 	
+	var movies[]primitive.M
+
+	for cur.Next(context.Background()){
+		var movie bson.M
+		if err=cur.Decode(&movie);err!=nil{
+			log.Fatal(err)
+		}
+		movies = append(movies,movie)
+	}
+	return movies
 }
+
+//
