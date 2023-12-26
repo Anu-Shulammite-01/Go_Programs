@@ -64,9 +64,7 @@ func ValidateEndpoint(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	router := mux.NewRouter()
-
 	router.HandleFunc("/generate", GenerateEndpoint).Methods("GET")
-	router.HandleFunc("/validate", ValidateEndpoint).Methods("GET")
-	
+	router.HandleFunc("/validate", ValidateEndpoint).Methods("GET")	
 	http.ListenAndServe(":8000", router)
 }
