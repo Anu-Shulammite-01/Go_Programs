@@ -19,6 +19,10 @@ func main(){
 func handleConn(conn net.Conn){
 	fmt.Println("Client Connected")
 	conn.Write([]byte("Hello World \n"))
+	var message string
+	fmt.Println("Enter the message:")
+	fmt.Scanln(&message)
+	conn.Write([]byte(message))
 	conn.Close()
 }
 

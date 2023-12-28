@@ -1,9 +1,10 @@
 package main
 
 import (
+	// "bufio"
 	"fmt"
-	"net"
 	"io"
+	"net"
 )
 
 func main() {
@@ -20,6 +21,19 @@ func main() {
 		return
 	}
 
-	fmt.Println("Received from server: ", string(message))
+	fmt.Println("Received from server:\n", string(message))
+
+	
+
+
+	// scanner := bufio.NewScanner(conn)
+	// for scanner.Scan() {
+	// 	message := scanner.Text()
+	// 	fmt.Println("Received from server:\n", message)
+	// }
+
+	// if err := scanner.Err(); err != nil {
+	// 	fmt.Println(err)
+	// }
 	
 }
