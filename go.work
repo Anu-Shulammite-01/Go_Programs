@@ -5,6 +5,7 @@ use (
 	"./Task4(jwt)"
 	"./Task5(Tcp&Udp)/TCP"
 	"./Task5(Tcp&Udp)/UDP"
+	"./Task6(Redis)"
 	./01Hello
 	./02Variables
 	./03UserInput
