@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
+	rand.New(rand.NewSource((time.Now().UnixNano())))
 	diceNum := rand.Intn(6) + 1
 	println("You rolled a", diceNum, "!")
 
