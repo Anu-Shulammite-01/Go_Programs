@@ -1,11 +1,13 @@
 go 1.21.4
 
 use (
+	"./Task1(RestEXApi-GinPackage)"
 	"./Task2(DB)"
 	"./Task4(jwt)"
 	"./Task5(Tcp&Udp)/TCP"
 	"./Task5(Tcp&Udp)/UDP"
 	"./Task6(Redis)"
+	"./Task7(in-memory)"
 	./01Hello
 	./02Variables
 	./03UserInput
@@ -34,7 +36,6 @@ use (
 	./26buildAPIEx
 	./27ModEx
 	./PanicRecoverEx
-	./RestEXApi
 	./URLExample
 	./webRequestEx
 
