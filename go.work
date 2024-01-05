@@ -8,6 +8,7 @@ use (
 	"./Task5(Tcp&Udp)/UDP"
 	"./Task6(Redis)"
 	"./Task7(in-memory)"
+	"./Task8(gcache)"
 	./01Hello
 	./02Variables
 	./03UserInput
