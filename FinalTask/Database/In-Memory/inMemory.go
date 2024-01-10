@@ -35,6 +35,4 @@ func (db *InMemoryDB) Test(string)([]string,error) {
 		keys = append(keys,k)
 		}
 		return keys,nil
-
-	return nil, nil
 }
