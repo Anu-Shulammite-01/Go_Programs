@@ -36,8 +36,10 @@ use (
 	./25SendFormDataEx
 	./26buildAPIEx
 	./27ModEx
+	./FinalTask
 	./PanicRecoverEx
 	./URLExample
+	./bigcacheEx
 	./webRequestEx
 
 )
