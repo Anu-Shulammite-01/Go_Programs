@@ -1,6 +1,7 @@
 package mongodb
 
-import ( 
+import (
+	model "TemplateUserDetailsTask/Model"
 	"context"
 	"fmt"
 	"log"
@@ -15,7 +16,7 @@ type MongoDB struct {
 	client *mongo.Client
 }
 
-func (db *MongoDB) CreateTemplate(key string, value Template) {
+func (db *MongoDB) CreateTemplate(key string, value model.Template) {
 	collection := db.client.Database("UserInfo").Collection("Details")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -27,10 +28,10 @@ func (db *MongoDB) CreateTemplate(key string, value Template) {
 }
 
 
-func (db *MongoDB) UpdateTemplate(oldKey string, newKey string,value Template) {
+func (db *MongoDB) UpdateTemplate(oldKey string, newKey string,value model.Template) {
 	collection := db.client.Database("UserInfo").Collection("Details")
-	filter := bson.D{{"Key", oldKey}}
-	update := bson.D{{"$set", bson.D{{"Key",newKey}, {"Value", value}}}}
+	filter := bson.D{{Key: "Key", Value: oldKey}}
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "Key",Value: newKey}, {Key: "Value", Value: value}}}}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	res,err := collection.UpdateOne(ctx,filter,update)
@@ -43,7 +44,7 @@ func (db *MongoDB) UpdateTemplate(oldKey string, newKey string,value Template) {
 
 func (db *MongoDB) DeleteTemplate(key string) {
 	collection := db.client.Database("UserInfo").Collection("Details")
-	filter := bson.D{{"Key",key}}
+	filter := bson.D{{Key: "Key",Value: key}}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	result,err:= collection.DeleteOne(ctx,filter)

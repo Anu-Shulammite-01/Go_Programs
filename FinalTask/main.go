@@ -1,21 +1,15 @@
 package main
 
 import (
+	model "TemplateUserDetailsTask/Model"
 	"encoding/json"
 	"net/http"
 )
 
-
-
-
-
-
-
-
 // Define the API handlers
 func createTemplateHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse the request body into a Template
-	var template Template
+	var template model.Template
 	err := json.NewDecoder(r.Body).Decode(&template)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
