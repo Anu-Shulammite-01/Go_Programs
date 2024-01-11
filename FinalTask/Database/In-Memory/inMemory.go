@@ -4,35 +4,57 @@ import model "TemplateUserDetailsTask/Model"
 
 // In-memory
 type InMemoryDB struct {
-	data map[string]model.Template
+	User []model.Data
 }
 
-func (db *InMemoryDB) CreateTemplate(key string, value model.Template) {
-	db.data[key] = value
+func (db *InMemoryDB) CreateInMemory()([]model.Data){
+	db.User = make([]model.Data, 0)
+	return db.User
 }
 
-func (db *InMemoryDB) UpdateTemplate(oldKey string, newKey string,value model.Template) {
-	_, exists := db.data[oldKey]
-	if exists {
-		delete(db.data, oldKey)
-		db.data[newKey] = value
+
+
+func (db *InMemoryDB) CreateTemplate(data model.Data) {
+	for _, value := range db.User {
+		if value.Name == data.Name {
+			panic("User Already Exist") 
+		}
 	}
+	db.User = append(db.User, data)
 }
 
-func (db *InMemoryDB) DeleteTemplate(key string) {
-	delete(db.data, key)
+
+func (db *InMemoryDB) UpdateTemplate(oldData model.Data,newData model.Data) {
+	for index,value := range db.User{
+		if value.Name == oldData.Name {
+			db.User[index] = newData
+			return
+		}
+	}
+	panic("No User Found to be Updated")
 }
 
-func (db *InMemoryDB) Refresh() error {
-	db.data = make(map[string]model.Template)
+func (db *InMemoryDB) DeleteTemplate(data model.Data) {
+	for i, v := range db.User {
+		if v.Name == data.Name {
+			db.User = append(db.User[:i], db.User[i+1:]...)
+			return
+		}
+	}
+	panic("No User Found to be Deleted")
+}
+
+func (db *InMemoryDB) RefreshData() error {
+	db.User=make([]model.Data,0)
 	return nil
 }
 
-func (db *InMemoryDB) Test(string)([]string,error) {
+func (db *InMemoryDB) TestData()([]string,error) {
 	//print all keys and values in map
-	keys := []string{}
-	for k := range db.data{
-		keys = append(keys,k)
-		}
-		return keys,nil
+	keys:= make([]string,len(db.User))
+	var key string
+	for i := range db.User {	key=db.User[i].Name
+		keys[i]=key
+	}
+	return keys,nil
 }

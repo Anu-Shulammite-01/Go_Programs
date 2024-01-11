@@ -16,37 +16,44 @@ type MongoDB struct {
 	client *mongo.Client
 }
 
-func (db *MongoDB) CreateTemplate(key string, value model.Template) {
+func (db *MongoDB) CreateTemplate(data model.Data) {
 	collection := db.client.Database("UserInfo").Collection("Details")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	res,err := collection.InsertOne(ctx,map[string]interface{}{"Key":key,"Value":value})
-	if err != nil {
-		panic(err)
+	//check if user already exist or not
+	count, _ := collection.CountDocuments(ctx, bson.D{{Key: "Name", Value: data.Name}})
+	if count == 0 {
+		res, err := collection.InsertOne(ctx, data)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Created new Template with ID: ", res.InsertedID)
+	}else{
+		log.Printf("The User %s is already exists.", data.Name)
 	}
-	fmt.Println("Added record to MongoDB with ID:",res.InsertedID)
 }
 
 
-func (db *MongoDB) UpdateTemplate(oldKey string, newKey string,value model.Template) {
+func (db *MongoDB) UpdateTemplate(oldData model.Data,newData model.Data) {
 	collection := db.client.Database("UserInfo").Collection("Details")
-	filter := bson.D{{Key: "Key", Value: oldKey}}
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "Key",Value: newKey}, {Key: "Value", Value: value}}}}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	filter := bson.D{{Key:"Name",Value: oldData.Name}}
+	update := bson.D{
+		{Key: "$set", Value: newData},
+	}
 	res,err := collection.UpdateOne(ctx,filter,update)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Updated records in MongoDB:",res.ModifiedCount)
-
 }
 
-func (db *MongoDB) DeleteTemplate(key string) {
+func (db *MongoDB) DeleteTemplate(data model.Data) {
 	collection := db.client.Database("UserInfo").Collection("Details")
-	filter := bson.D{{Key: "Key",Value: key}}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	filter := bson.D{{Key: "Name",Value: data.Name}}
 	result,err:= collection.DeleteOne(ctx,filter)
 	if err!=nil {
 		log.Fatal(err)
@@ -54,13 +61,13 @@ func (db *MongoDB) DeleteTemplate(key string) {
 	fmt.Printf("Deleted %v documents from UserInfo\n", result.DeletedCount)
 }
 
-func (db *MongoDB) Refresh() error {
+func (db *MongoDB) RefreshData() error {
 	//Implement refresh function for Mongo DB
 
 	return nil
 }
 
-func (db *MongoDB) Test(string)([]string,error) {
+func (db *MongoDB) TestData()([]string,error) {
 	collection := db.client.Database("UserInfo").Collection("Details")
 	var results []string
 	cursor,err:=collection.Find(context.TODO(),bson.D{})

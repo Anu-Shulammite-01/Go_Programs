@@ -1,39 +1,22 @@
 package main
 
 import (
-	model "TemplateUserDetailsTask/Model"
-	"encoding/json"
+	connections "TemplateUserDetailsTask/Database/Connections"
+	router "TemplateUserDetailsTask/Router"
+	"fmt"
+	"log"
 	"net/http"
 )
-
-// Define the API handlers
-func createTemplateHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse the request body into a Template
-	var template model.Template
-	err := json.NewDecoder(r.Body).Decode(&template)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Create a new DB and call CreateTemplate
-	// db := &DB{}
-	// err = db.CreateTemplate(template.Key, template)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// // Respond with a success message
-	// fmt.Fprint(w, "Template created successfully")
-}
-
-// Similar handlers would be implemented for UpdateTemplate, DeleteTemplate, Refresh and Test
-
 func main() {
-	http.HandleFunc("/createTemplate", createTemplateHandler)
-	// Similar routes would be added for UpdateTemplate, DeleteTemplate, Refresh and Test
-	http.ListenAndServe(":8080", nil)
+	fmt.Println("API Example")
+	//establishing database connection of mongoDB and redis from connections package
+	mongoClient := connections.ConnectMongoDB()
+	redisClient:=connections.ConnectRedis()
+	defer connections.CloseConnection(mongoClient)
+	defer connections.CloseRedisConn(redisClient)
+	r := router.Router()
+	log.Fatal(http.ListenAndServe(":8081", r))
 }
+
 
 
