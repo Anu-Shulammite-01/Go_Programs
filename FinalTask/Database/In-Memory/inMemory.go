@@ -1,60 +1,79 @@
 package inmemory
 
-import model "TemplateUserDetailsTask/Model"
+import (
+	model "TemplateUserDetailsTask/Model"
+	"fmt"
+	"sync"
+)
 
 // In-memory
 type InMemoryDB struct {
-	User []model.Data
+	User map[string]model.Template
 }
 
-func (db *InMemoryDB) CreateInMemory()([]model.Data){
-	db.User = make([]model.Data, 0)
-	return db.User
+func NewInMemoryDB() *InMemoryDB {
+	return &InMemoryDB{
+		User: make(map[string]model.Template),
+	}
 }
-
-
 
 func (db *InMemoryDB) CreateTemplate(data model.Data) {
 	for _, value := range db.User {
-		if value.Name == data.Name {
+		if value.Key == data.Name {
 			panic("User Already Exist") 
 		}
 	}
-	db.User = append(db.User, data)
+	db.User[data.Name] =  data.Description
+	fmt.Println("Successfully created template in In-Memory!")
 }
 
 
-func (db *InMemoryDB) UpdateTemplate(oldData model.Data,newData model.Data) {
-	for index,value := range db.User{
-		if value.Name == oldData.Name {
-			db.User[index] = newData
-			return
-		}
+func (db *InMemoryDB) UpdateTemplate(data model.Data) {
+	_, ok := db.User[data.Name]
+	if !ok {
+		panic("No such user found.")
 	}
-	panic("No User Found to be Updated")
+	db.User[data.Name] = data.Description
+	fmt.Printf("Successfully updated the details of %s.\n", data.Name)
 }
 
-func (db *InMemoryDB) DeleteTemplate(data model.Data) {
-	for i, v := range db.User {
-		if v.Name == data.Name {
-			db.User = append(db.User[:i], db.User[i+1:]...)
-			return
-		}
+func (db *InMemoryDB) DeleteTemplate(data string) {
+	_, ok := db.User[data]
+	if !ok {
+		fmt.Println("No such user found.")
+	}else{
+		delete(db.User, data)
+		fmt.Printf("Successfully deleted %v.\n", data)
 	}
-	panic("No User Found to be Deleted")
 }
 
-func (db *InMemoryDB) RefreshData() error {
-	db.User=make([]model.Data,0)
+func (db *InMemoryDB) RefreshData(appState *model.AppState) error {
+	var wg sync.WaitGroup
+
+	// For each key-value pair in the User map, update your application's state
+	for key, value := range db.User {
+		wg.Add(1)
+		go func(key string, value model.Template) {
+			defer wg.Done()
+
+			// Update the application's state with the new template
+			appState.Templates[key] = value
+			fmt.Printf("From In-Memory ; Key: %s, Template: %+v\n", key, value)
+		}(key, value)
+	}
+
+	wg.Wait()
 	return nil
 }
 
 func (db *InMemoryDB) TestData()([]string,error) {
 	//print all keys and values in map
-	keys:= make([]string,len(db.User))
-	var key string
-	for i := range db.User {	key=db.User[i].Name
-		keys[i]=key
+	for keys, values := range db.User{
+		fmt.Println(keys," : ",values)
 	}
-	return keys,nil
+	var results []string
+	for key,value := range db.User {
+		results = append(results, key+" : "+value.Key+" = "+value.Value)
+	}
+	return results ,nil
 }

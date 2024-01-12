@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,15 +14,18 @@ import (
 
 // MongoDB
 type MongoDB struct {
-	client *mongo.Client
+	Client *mongo.Client
 }
 
 func (db *MongoDB) CreateTemplate(data model.Data) {
-	collection := db.client.Database("UserInfo").Collection("Details")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	collection := db.Client.Database("UserInfo").Collection("Details")
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 	//check if user already exist or not
-	count, _ := collection.CountDocuments(ctx, bson.D{{Key: "Name", Value: data.Name}})
+	count, err := collection.CountDocuments(ctx, bson.D{{Key: "Name", Value: data.Name}})
+	if err != nil {
+		log.Fatal(err)
+	}
 	if count == 0 {
 		res, err := collection.InsertOne(ctx, data)
 		if err != nil {
@@ -34,49 +38,98 @@ func (db *MongoDB) CreateTemplate(data model.Data) {
 }
 
 
-func (db *MongoDB) UpdateTemplate(oldData model.Data,newData model.Data) {
-	collection := db.client.Database("UserInfo").Collection("Details")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (db *MongoDB) UpdateTemplate(data model.Data) {
+	collection := db.Client.Database("UserInfo").Collection("Details")
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
-	filter := bson.D{{Key:"Name",Value: oldData.Name}}
+	filter := bson.D{{Key:"name",Value: data.Name}}
 	update := bson.D{
-		{Key: "$set", Value: newData},
+		{Key: "$set", Value: bson.D{{Key: "description", Value: data.Description}}},
 	}
-	res,err := collection.UpdateOne(ctx,filter,update)
+	_ = collection.FindOneAndUpdate(ctx,filter,update)
+	fmt.Println("Updated records in MongoDB")
+}
+
+func (db *MongoDB) DeleteTemplate(data string) {
+	collection := db.Client.Database("UserInfo").Collection("Details")
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+	result,err := collection.DeleteOne(ctx,bson.D{{Key: "name",Value : data}})
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Updated records in MongoDB:",res.ModifiedCount)
-}
-
-func (db *MongoDB) DeleteTemplate(data model.Data) {
-	collection := db.client.Database("UserInfo").Collection("Details")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	filter := bson.D{{Key: "Name",Value: data.Name}}
-	result,err:= collection.DeleteOne(ctx,filter)
-	if err!=nil {
-		log.Fatal(err)
+	if result.DeletedCount > 0 {
+		fmt.Printf("Successfully deleted the record of %v\n", data)
+	} else {
+		fmt.Printf("No Record found for deletion.\n")
 	}
-	fmt.Printf("Deleted %v documents from UserInfo\n", result.DeletedCount)
 }
 
-func (db *MongoDB) RefreshData() error {
-	//Implement refresh function for Mongo DB
+func (db *MongoDB) RefreshData(appState *model.AppState)error{
+	// Specify the context and the collection
+	ctx := context.Background()
+	collection := db.Client.Database("UserInfo").Collection("Details")
+	// Create a cursor for the Find operation
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		return fmt.Errorf("failed to get documents from MongoDB: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	var wg sync.WaitGroup
+
+	// For each document, fetch the associated value and update your application's state
+	for cursor.Next(ctx) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// Decode the document into a Template object
+			var template model.Data
+			if err := cursor.Decode(&template); err != nil {
+				fmt.Printf("failed to decode document: %s\n", err)
+				return
+			}
+
+			// Update the application's state with the new template
+			appState.Templates[template.Name] = template.Description
+			fmt.Printf("From MongoDB ; Key: %s, Template: %+v\n", template.Name, template.Description)
+		}()
+	}
+
+	wg.Wait()
+
+	if err := cursor.Err(); err != nil {
+		return fmt.Errorf("cursor encountered an error: %v", err)
+	}
 
 	return nil
 }
 
+
+// func (db *MongoDB) RefreshData() error {
+// 	//Implement refresh function for Mongo DB
+// 	db.Client.Database("UserInfo").Collection("Details").Drop(context.TODO())
+// 	return nil
+// }
+
 func (db *MongoDB) TestData()([]string,error) {
-	collection := db.client.Database("UserInfo").Collection("Details")
+	collection := db.Client.Database("UserInfo").Collection("Details")
 	var results []string
 	cursor,err:=collection.Find(context.TODO(),bson.D{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer cursor.Close(context.Background())
-	if err:=cursor.All(context.TODO(),&results); err!=nil{
-		log.Fatal(err)
+	for cursor.Next(context.TODO()) {
+		var elem struct {
+			Name string `json:"name"`
+			Description model.Template `json:"description"`
+		}
+		err = cursor.Decode(&elem)
+		if err != nil {
+			return nil,err
+		}
+		results=append(results,elem.Name+" : "+elem.Description.Key+" = "+elem.Description.Value)
 	}
 	return results,nil
 }

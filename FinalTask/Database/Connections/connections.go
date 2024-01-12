@@ -1,9 +1,10 @@
 package connections
 
 import (
+	mongodb "TemplateUserDetailsTask/Database/MongoDB"
+	redisDB "TemplateUserDetailsTask/Database/Redis"
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -12,26 +13,30 @@ import (
 )
 
 //connect to MongoDB
-func ConnectMongoDB() (*mongo.Client) {
-    clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+func ConnectMongoDB() (*mongodb.MongoDB,error) {
+	clientOptions := options.Client().ApplyURI("mongodb+srv://Anu_Shulammite:Password@cluster0.kwjddrn.mongodb.net/")
     client, err := mongo.Connect(context.TODO(), clientOptions)
     if err != nil {
-        panic(err.Error())
+        return nil, fmt.Errorf("failed to connect to MongoDB: %s", err)
     }
-    return client
+	fmt.Println("Successfully connected to MongoDB")
+	return &mongodb.MongoDB{Client:client},nil
 }
+
+
 // Close the MongoDB connection
-func CloseConnection(client *mongo.Client){
+func CloseConnection(c *mongodb.MongoDB)error{
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	if err := client.Disconnect(ctx); err!=nil{
-		panic(err)
+	if err := c.Client.Disconnect(ctx); err!=nil{
+		return fmt.Errorf("failed to close MongoDB connection: %s", err)
 	} else {
 		fmt.Println("Successfully closed Mongo DB Connection!")
 	}
+	return nil
 }
 //redis connection
-func ConnectRedis()(*redis.Client){
+func ConnectRedis()(*redisDB.MyRedis,error){
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", 
@@ -40,17 +45,17 @@ func ConnectRedis()(*redis.Client){
 	ctx := context.Background()
 	pong, err := client.Ping(ctx).Result()
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to connect to Redis: %s", err)
 	}
 	fmt.Printf("Connected to Redis Server : %s\n", pong)
-	return client
+	return &redisDB.MyRedis{Client:client},nil
 }
 //close redis connection
-func CloseRedisConn(c *redis.Client){
-	if err := c.Close(); err != nil {
-		log.Fatal(err)
-	}else{
-		fmt.Println("Closed Redis Connection Successfully.")
+func CloseRedisConn(c *redisDB.MyRedis)error{
+	if err := c.Client.Close(); err != nil {
+		return fmt.Errorf("failed to close Redis connection: %s", err)
 	}
+	fmt.Println("Closed Redis Connection Successfully.")
+	return nil
 }
 

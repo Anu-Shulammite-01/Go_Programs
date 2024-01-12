@@ -1,0 +1,31 @@
+func (db *MongoDB) CreateTemplate(data model.Data) {
+	collection := db.Client.Database("UserInfo").Collection("Details")
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+	//check if user already exist or not
+	count, err := collection.CountDocuments(ctx, bson.D{{Key: "Name", Value: data.Name}})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if count > 0 {
+		panic("user already exists!")
+	}
+	t := template.Must(template.New("greet").Parse("Hi {{.Name}}, how are you?"))
+	var buf bytes.Buffer
+	err = t.Execute(&buf, data)
+	if err != nil {
+		panic(err)
+	}
+	msg := buf.String()
+	res, err := collection.InsertOne(ctx, bson.M{
+		"Name":   data.Name,
+		"Description":model.Template{
+			Key: data.Description.Key,
+			Value: msg,
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Inserted records into MongoDB:", res.InsertedID)
+}
