@@ -17,28 +17,29 @@ type MongoDB struct {
 	Client *mongo.Client
 }
 
-func (db *MongoDB) CreateTemplate(data model.Data) {
+func (db *MongoDB) CreateTemplate(data model.Data)error {
 	collection := db.Client.Database("UserInfo").Collection("Details")
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 	//check if user already exist or not
 	count, err := collection.CountDocuments(ctx, bson.D{{Key: "Name", Value: data.Name}})
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to check if user exists: %v", err)
 	}
 	if count == 0 {
 		res, err := collection.InsertOne(ctx, data)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("failed to create new user: %v", err)
 		}
 		fmt.Println("Created new Template with ID: ", res.InsertedID)
 	}else{
 		log.Printf("The User %s is already exists.", data.Name)
 	}
+	return nil
 }
 
 
-func (db *MongoDB) UpdateTemplate(data model.Data) {
+func (db *MongoDB) UpdateTemplate(data model.Data)error {
 	collection := db.Client.Database("UserInfo").Collection("Details")
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
@@ -48,21 +49,23 @@ func (db *MongoDB) UpdateTemplate(data model.Data) {
 	}
 	_ = collection.FindOneAndUpdate(ctx,filter,update)
 	fmt.Println("Updated records in MongoDB")
+	return nil
 }
 
-func (db *MongoDB) DeleteTemplate(data string) {
+func (db *MongoDB) DeleteTemplate(data string)error {
 	collection := db.Client.Database("UserInfo").Collection("Details")
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 	result,err := collection.DeleteOne(ctx,bson.D{{Key: "name",Value : data}})
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to delete the record: %v", err)
 	}
 	if result.DeletedCount > 0 {
 		fmt.Printf("Successfully deleted the record of %v\n", data)
 	} else {
 		fmt.Printf("No Record found for deletion.\n")
 	}
+	return nil
 }
 
 func (db *MongoDB) RefreshData(appState *model.AppState)error{
@@ -77,13 +80,11 @@ func (db *MongoDB) RefreshData(appState *model.AppState)error{
 	defer cursor.Close(ctx)
 
 	var wg sync.WaitGroup
-
 	// For each document, fetch the associated value and update your application's state
 	for cursor.Next(ctx) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-
 			// Decode the document into a Template object
 			var template model.Data
 			if err := cursor.Decode(&template); err != nil {
@@ -106,19 +107,12 @@ func (db *MongoDB) RefreshData(appState *model.AppState)error{
 	return nil
 }
 
-
-// func (db *MongoDB) RefreshData() error {
-// 	//Implement refresh function for Mongo DB
-// 	db.Client.Database("UserInfo").Collection("Details").Drop(context.TODO())
-// 	return nil
-// }
-
 func (db *MongoDB) TestData()([]string,error) {
 	collection := db.Client.Database("UserInfo").Collection("Details")
 	var results []string
 	cursor,err:=collection.Find(context.TODO(),bson.D{})
 	if err != nil {
-		log.Fatal(err)
+		return nil,err
 	}
 	for cursor.Next(context.TODO()) {
 		var elem struct {

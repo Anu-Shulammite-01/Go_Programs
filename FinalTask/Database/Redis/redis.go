@@ -3,8 +3,8 @@ package redisDB
 import (
 	model "TemplateUserDetailsTask/Model"
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/redis/go-redis/v9"
@@ -16,47 +16,48 @@ type MyRedis struct {
 }
 
 
-func (db *MyRedis) CreateTemplate(data model.Data) {
+func (db *MyRedis) CreateTemplate(data model.Data)error {
 	if _,err := db.Client.Get(context.Background(), data.Name).Result(); err == redis.Nil {
 		bytes, err := data.Description.MarshalBinary()
 		if err != nil {
-			log.Fatalf("Failed to marshal data: %s", err)
+			return fmt.Errorf("failed to marshal data: %w", err)
 		}
 		if err := db.Client.Set(context.Background(), data.Name,bytes, 0).Err();err != nil {
-			log.Fatalf("Failed to set data to redis: %s", err)
+			return fmt.Errorf("failed to set data to redis: %w", err)
 		}
 		fmt.Println("Sucessfully created template in Redis!")
 	}else if err != nil {
-		log.Fatalf("Failed to get data from redis: %s", err)
+		return fmt.Errorf("failed to get data from redis: %w", err)
 	} else {
-		log.Println("User is already exists.")
+		return fmt.Errorf("user already exists in Redis")
 	}
+	return nil
 }
 
-func (db *MyRedis) UpdateTemplate(data model.Data) {
+func (db *MyRedis) UpdateTemplate(data model.Data)error {
 	ctx := context.Background()
 	bytes, err := data.Description.MarshalBinary()
 	if err != nil {
-		log.Fatalf("Failed to marshal data: %s", err)
+		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 	if err := db.Client.Set(ctx, data.Name, bytes, 0).Err(); err != nil {
-		log.Fatalf("Failed to update data in redis: %s", err)
+		return fmt.Errorf("failed to update data in Redis: %w", err)
 	}
 	fmt.Println("Successfully updated the user details.")
+	return nil
 }
 
-func (db *MyRedis) DeleteTemplate(data string) {
+func (db *MyRedis) DeleteTemplate(data string)error {
 	if res,err := db.Client.Del(context.Background(), data).Result();err == nil{
 		if res > 0 {
-			log.Printf("%d key deleted\n",res)
+			fmt.Printf("%d key deleted\n",res)
 		}else{
-			log.Println("No such key!")
+			return errors.New("no such key found")
 		}
 	}else{
-		log.Printf("Failed to delete the data from redis:%s",err)
+		return err
 	}
-
-
+	return nil
 }
 
 func (db *MyRedis) RefreshData(appState *model.AppState) error {

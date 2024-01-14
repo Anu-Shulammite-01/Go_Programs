@@ -17,34 +17,37 @@ func NewInMemoryDB() *InMemoryDB {
 	}
 }
 
-func (db *InMemoryDB) CreateTemplate(data model.Data) {
+func (db *InMemoryDB) CreateTemplate(data model.Data)error {
 	for _, value := range db.User {
 		if value.Key == data.Name {
-			panic("User Already Exist") 
+			return fmt.Errorf("user already exist")
 		}
 	}
 	db.User[data.Name] =  data.Description
 	fmt.Println("Successfully created template in In-Memory!")
+	return nil
 }
 
 
-func (db *InMemoryDB) UpdateTemplate(data model.Data) {
+func (db *InMemoryDB) UpdateTemplate(data model.Data)error {
 	_, ok := db.User[data.Name]
 	if !ok {
-		panic("No such user found.")
+		return fmt.Errorf("template does not exist")
 	}
 	db.User[data.Name] = data.Description
 	fmt.Printf("Successfully updated the details of %s.\n", data.Name)
+	return nil
 }
 
-func (db *InMemoryDB) DeleteTemplate(data string) {
+func (db *InMemoryDB) DeleteTemplate(data string)error {
 	_, ok := db.User[data]
 	if !ok {
-		fmt.Println("No such user found.")
+		return fmt.Errorf("no such user found")
 	}else{
 		delete(db.User, data)
 		fmt.Printf("Successfully deleted %v.\n", data)
 	}
+	return nil
 }
 
 func (db *InMemoryDB) RefreshData(appState *model.AppState) error {
