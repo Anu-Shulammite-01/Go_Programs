@@ -20,7 +20,7 @@ func NewInMemoryDB() *InMemoryDB {
 func (db *InMemoryDB) CreateTemplate(data model.Data)error {
 	for _, value := range db.User {
 		if value.Key == data.Name {
-			return fmt.Errorf("user already exist")
+			return fmt.Errorf("user already exists")
 		}
 	}
 	db.User[data.Name] =  data.Description
