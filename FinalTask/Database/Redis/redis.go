@@ -2,10 +2,12 @@ package redisDB
 
 import (
 	model "TemplateUserDetailsTask/Model"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"sync"
+	"text/template"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -17,6 +19,22 @@ type MyRedis struct {
 
 
 func (db *MyRedis) CreateTemplate(data model.Data)error {
+	tmpl := data.Description.Value
+	t, err := template.New("template").Parse(tmpl)
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %v", err)
+	}
+
+	// Execute the template with the supplied data
+	var tpl bytes.Buffer
+	err = t.Execute(&tpl, data)
+	if err != nil {
+		return fmt.Errorf("failed to execute template: %v", err)
+	}
+
+	// Assuming model.Data has a Template field to store the processed template
+	data.Description.Value = tpl.String()
+
 	if _,err := db.Client.Get(context.Background(), data.Name).Result(); err == redis.Nil {
 		bytes, err := data.Description.MarshalBinary()
 		if err != nil {
@@ -35,6 +53,22 @@ func (db *MyRedis) CreateTemplate(data model.Data)error {
 }
 
 func (db *MyRedis) UpdateTemplate(data model.Data)error {
+	tmpl := data.Description.Value
+	t, err := template.New("template").Parse(tmpl)
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %v", err)
+	}
+
+	// Execute the template with the supplied data
+	var tpl bytes.Buffer
+	err = t.Execute(&tpl, data)
+	if err != nil {
+		return fmt.Errorf("failed to execute template: %v", err)
+	}
+
+	// Assuming model.Data has a Template field to store the processed template
+	data.Description.Value = tpl.String()
+
 	ctx := context.Background()
 	bytes, err := data.Description.MarshalBinary()
 	if err != nil {

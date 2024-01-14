@@ -2,8 +2,10 @@ package inmemory
 
 import (
 	model "TemplateUserDetailsTask/Model"
+	"bytes"
 	"fmt"
 	"sync"
+	"text/template"
 )
 
 // In-memory
@@ -18,6 +20,22 @@ func NewInMemoryDB() *InMemoryDB {
 }
 
 func (db *InMemoryDB) CreateTemplate(data model.Data)error {
+	tmpl := data.Description.Value
+	t, err := template.New("template").Parse(tmpl)
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %v", err)
+	}
+
+	// Execute the template with the supplied data
+	var tpl bytes.Buffer
+	err = t.Execute(&tpl, data)
+	if err != nil {
+		return fmt.Errorf("failed to execute template: %v", err)
+	}
+
+	// Assuming model.Data has a Template field to store the processed template
+	data.Description.Value = tpl.String()
+
 	for _, value := range db.User {
 		if value.Key == data.Name {
 			return fmt.Errorf("user already exists")
@@ -30,6 +48,22 @@ func (db *InMemoryDB) CreateTemplate(data model.Data)error {
 
 
 func (db *InMemoryDB) UpdateTemplate(data model.Data)error {
+	tmpl := data.Description.Value
+	t, err := template.New("template").Parse(tmpl)
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %v", err)
+	}
+
+	// Execute the template with the supplied data
+	var tpl bytes.Buffer
+	err = t.Execute(&tpl, data)
+	if err != nil {
+		return fmt.Errorf("failed to execute template: %v", err)
+	}
+
+	// Assuming model.Data has a Template field to store the processed template
+	data.Description.Value = tpl.String()
+
 	_, ok := db.User[data.Name]
 	if !ok {
 		return fmt.Errorf("template does not exist")

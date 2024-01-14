@@ -20,8 +20,8 @@ func InitializeRoutes(db *inmemory.InMemoryDB, mongoClient *mongodb.MongoDB, red
 
 	// Set up your routes
 	r.HandleFunc("/create", handler.Create).Methods("POST")
-	r.HandleFunc("/update/{stringdata}/{newData1}/{newData2}", handler.Update).Methods("PUT")
-	r.HandleFunc("/delete/{data}", handler.Delete).Methods("DELETE")
+	r.HandleFunc("/update/{stringdata}/{newData1}/{newData2}/", handler.Update).Methods("PUT")
+	r.HandleFunc("/delete/{data}/", handler.Delete).Methods("DELETE")
 	r.HandleFunc("/refresh", handler.Refresh).Methods("GET")
 	r.HandleFunc("/test", handler.Test).Methods("GET")
 	return r

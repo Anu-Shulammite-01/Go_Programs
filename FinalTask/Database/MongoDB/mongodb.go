@@ -2,10 +2,12 @@ package mongodb
 
 import (
 	model "TemplateUserDetailsTask/Model"
+	"bytes"
 	"context"
 	"fmt"
 	"log"
 	"sync"
+	"text/template"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,6 +20,23 @@ type MongoDB struct {
 }
 
 func (db *MongoDB) CreateTemplate(data model.Data)error {
+	// Create a new template with some name
+	tmpl := data.Description.Value
+	t, err := template.New("template").Parse(tmpl)
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %v", err)
+	}
+
+	// Execute the template with the supplied data
+	var tpl bytes.Buffer
+	err = t.Execute(&tpl, data)
+	if err != nil {
+		return fmt.Errorf("failed to execute template: %v", err)
+	}
+
+	// Assuming model.Data has a Template field to store the processed template
+	data.Description.Value = tpl.String()
+
 	collection := db.Client.Database("UserInfo").Collection("Details")
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
@@ -40,6 +59,23 @@ func (db *MongoDB) CreateTemplate(data model.Data)error {
 
 
 func (db *MongoDB) UpdateTemplate(data model.Data)error {
+	// Create a new template with some name
+	tmpl := data.Description.Value
+	t, err := template.New("template").Parse(tmpl)
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %v", err)
+	}
+
+	// Execute the template with the supplied data
+	var tpl bytes.Buffer
+	err = t.Execute(&tpl, data)
+	if err != nil {
+		return fmt.Errorf("failed to execute template: %v", err)
+	}
+
+	// Assuming model.Data has a Template field to store the processed template
+	data.Description.Value = tpl.String()
+	
 	collection := db.Client.Database("UserInfo").Collection("Details")
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
