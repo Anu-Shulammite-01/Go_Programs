@@ -4,18 +4,21 @@ import (
 	model "TemplateUserDetailsTask/Model"
 	"bytes"
 	"fmt"
-	"sync"
 	"text/template"
 )
 
 // In-memory
 type InMemoryDB struct {
 	User map[string]model.Template
+	UpdateChan chan model.Data
+	DeleteChan chan string
 }
 
 func NewInMemoryDB() *InMemoryDB {
 	return &InMemoryDB{
 		User: make(map[string]model.Template),
+		UpdateChan: make(chan model.Data,100),
+		DeleteChan: make(chan string,100),
 	}
 }
 
@@ -70,6 +73,7 @@ func (db *InMemoryDB) UpdateTemplate(data model.Data)error {
 	}
 	db.User[data.Name] = data.Description
 	fmt.Printf("Successfully updated the details of %s.\n", data.Name)
+	db.UpdateChan <- data
 	return nil
 }
 
@@ -80,27 +84,24 @@ func (db *InMemoryDB) DeleteTemplate(data string)error {
 	}else{
 		delete(db.User, data)
 		fmt.Printf("Successfully deleted %v.\n", data)
+		db.DeleteChan <- data
 	}
 	return nil
 }
 
-func (db *InMemoryDB) RefreshData(appState *model.AppState) error {
-	var wg sync.WaitGroup
-
-	// For each key-value pair in the User map, update your application's state
-	for key, value := range db.User {
-		wg.Add(1)
-		go func(key string, value model.Template) {
-			defer wg.Done()
-
-			// Update the application's state with the new template
-			appState.Templates[key] = value
-			fmt.Printf("From In-Memory ; Key: %s, Template: %+v\n", key, value)
-		}(key, value)
-	}
-
-	wg.Wait()
-	return nil
+func (db *InMemoryDB) RefreshData(appState *model.AppState) {
+	go func() {
+		for {
+			select {
+			case data1 := <-db.UpdateChan:
+				appState.Templates[data1.Name] = data1.Description
+				fmt.Printf("Updated appState; Key: %s, Template: %+v\n", data1.Name, data1.Description)
+			case data2 := <-db.DeleteChan:
+				delete(appState.Templates, data2)
+				fmt.Printf("Deleted from appState; Key: %s\n", data2)
+			}
+		}
+	}()
 }
 
 func (db *InMemoryDB) TestData()([]string,error) {

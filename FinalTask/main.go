@@ -3,6 +3,8 @@ package main
 import (
 	connections "TemplateUserDetailsTask/Database/Connections"
 	inmemory "TemplateUserDetailsTask/Database/In-Memory"
+	mongodb "TemplateUserDetailsTask/Database/MongoDB"
+	redisDB "TemplateUserDetailsTask/Database/Redis"
 	model "TemplateUserDetailsTask/Model"
 	router "TemplateUserDetailsTask/Router"
 	"fmt"
@@ -11,20 +13,30 @@ import (
 )
 func main() {
 	fmt.Println("API Example")
-	//establishing database connection of mongoDB and redis from connections package
+	//MongoDB
 	mongoClient,err := connections.ConnectMongoDB()
 	if err != nil{
 		log.Fatal(err)
 	}
+	mongoDBClient:=mongodb.NewMongoDB(mongoClient)
+	defer connections.CloseConnection(mongoDBClient)
+
+	//Redis
 	redisClient,err:=connections.ConnectRedis()
 	if err != nil{
 		log.Fatal(err)
 	}
-	db := inmemory.NewInMemoryDB()
-	defer connections.CloseConnection(mongoClient)
-	defer connections.CloseRedisConn(redisClient)
+	RedisClient := redisDB.NewMyRedis(redisClient)
+	defer connections.CloseRedisConn(RedisClient)
+
+	//In-Memory
+	inMemory := inmemory.NewInMemoryDB()
+	
+	//AppState
 	appState := model.NewAppState()
-	r := router.InitializeRoutes(db, mongoClient, redisClient, appState)
+
+	//Router
+	r := router.InitializeRoutes(inMemory, mongoDBClient, redisClient, appState)
 	err = http.ListenAndServe(":8081", r)
 	if err != nil {
 		log.Fatal("Error starting the server : ", err)

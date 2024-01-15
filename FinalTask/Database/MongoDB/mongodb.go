@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sync"
 	"text/template"
 	"time"
 
@@ -17,6 +16,16 @@ import (
 // MongoDB
 type MongoDB struct {
 	Client *mongo.Client
+	UpdateChan chan model.Data
+	DeleteChan chan string
+}
+
+func NewMongoDB(client *MongoDB) *MongoDB {
+	return &MongoDB{
+		Client:      client.Client,
+		UpdateChan: make(chan model.Data,100),
+		DeleteChan: make(chan string,100),
+	}
 }
 
 func (db *MongoDB) CreateTemplate(data model.Data)error {
@@ -85,6 +94,7 @@ func (db *MongoDB) UpdateTemplate(data model.Data)error {
 	}
 	_ = collection.FindOneAndUpdate(ctx,filter,update)
 	fmt.Println("Updated records in MongoDB")
+	db.UpdateChan <- data
 	return nil
 }
 
@@ -98,49 +108,26 @@ func (db *MongoDB) DeleteTemplate(data string)error {
 	}
 	if result.DeletedCount > 0 {
 		fmt.Printf("Successfully deleted the record of %v\n", data)
+		db.DeleteChan <- data
 	} else {
 		fmt.Printf("No Record found for deletion.\n")
 	}
 	return nil
 }
 
-func (db *MongoDB) RefreshData(appState *model.AppState)error{
-	// Specify the context and the collection
-	ctx := context.Background()
-	collection := db.Client.Database("UserInfo").Collection("Details")
-	// Create a cursor for the Find operation
-	cursor, err := collection.Find(ctx, bson.M{})
-	if err != nil {
-		return fmt.Errorf("failed to get documents from MongoDB: %v", err)
-	}
-	defer cursor.Close(ctx)
-
-	var wg sync.WaitGroup
-	// For each document, fetch the associated value and update your application's state
-	for cursor.Next(ctx) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			// Decode the document into a Template object
-			var template model.Data
-			if err := cursor.Decode(&template); err != nil {
-				fmt.Printf("failed to decode document: %s\n", err)
-				return
+func (db *MongoDB) RefreshData(appState *model.AppState/*,printChan chan bool*/) {
+	go func() {
+		for {
+			select {
+			case data1 := <-db.UpdateChan:
+				appState.Templates[data1.Name] = data1.Description
+				fmt.Printf("Updated appState; Key: %s, Template: %+v\n", data1.Name, data1.Description)
+			case data2 := <-db.DeleteChan:
+				delete(appState.Templates, data2)
+				fmt.Printf("Deleted from appState; Key: %s\n", data2)
 			}
-
-			// Update the application's state with the new template
-			appState.Templates[template.Name] = template.Description
-			fmt.Printf("From MongoDB ; Key: %s, Template: %+v\n", template.Name, template.Description)
-		}()
-	}
-
-	wg.Wait()
-
-	if err := cursor.Err(); err != nil {
-		return fmt.Errorf("cursor encountered an error: %v", err)
-	}
-
-	return nil
+		}
+	}()
 }
 
 func (db *MongoDB) TestData()([]string,error) {

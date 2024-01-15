@@ -11,9 +11,9 @@ import (
 )
 
 
-func InitializeRoutes(db *inmemory.InMemoryDB, mongoClient *mongodb.MongoDB, redisClient *redisDB.MyRedis,appState *model.AppState) *mux.Router {
+func InitializeRoutes(inMemory *inmemory.InMemoryDB, mongoClient *mongodb.MongoDB, redisClient *redisDB.MyRedis,appState *model.AppState) *mux.Router {
 	// Create a new BaseHandler with the provided db, mongoClient, and redisClient
-	handler := controllers.NewBaseHandler(mongoClient, redisClient, db, appState)
+	handler := controllers.NewBaseHandler(mongoClient, redisClient, inMemory, appState)
 
 	// Create a new router
 	r := mux.NewRouter()

@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"text/template"
 
 	"github.com/redis/go-redis/v9"
@@ -15,8 +14,17 @@ import (
 // Redis
 type MyRedis struct {
 	Client *redis.Client
+	UpdateChan chan model.Data
+	DeleteChan chan string
 }
 
+func NewMyRedis(client *MyRedis) *MyRedis {
+	return &MyRedis{
+		Client:      client.Client,
+		UpdateChan: make(chan model.Data,100),
+		DeleteChan: make(chan string,100),
+	}
+}
 
 func (db *MyRedis) CreateTemplate(data model.Data)error {
 	tmpl := data.Description.Value
@@ -78,6 +86,7 @@ func (db *MyRedis) UpdateTemplate(data model.Data)error {
 		return fmt.Errorf("failed to update data in Redis: %w", err)
 	}
 	fmt.Println("Successfully updated the user details.")
+	db.UpdateChan <- data
 	return nil
 }
 
@@ -85,6 +94,7 @@ func (db *MyRedis) DeleteTemplate(data string)error {
 	if res,err := db.Client.Del(context.Background(), data).Result();err == nil{
 		if res > 0 {
 			fmt.Printf("%d key deleted\n",res)
+			db.DeleteChan <- data
 		}else{
 			return errors.New("no such key found")
 		}
@@ -94,44 +104,19 @@ func (db *MyRedis) DeleteTemplate(data string)error {
 	return nil
 }
 
-func (db *MyRedis) RefreshData(appState *model.AppState) error {
-    // Fetch all keys from Redis
-	ctx := context.Background()
-	keys, err := db.Client.Keys(ctx, "*").Result()
-	if err != nil {
-		return fmt.Errorf("failed to get keys from Redis: %v", err)
-	}
-
-	var wg sync.WaitGroup
-
-	// For each key, fetch the associated value and update your application's state
-	for _, key := range keys {
-		wg.Add(1)
-		go func(key string) {
-			defer wg.Done()
-
-			value, err := db.Client.Get(ctx, key).Result()
-			if err != nil {
-				fmt.Printf("failed to get value from Redis: %v\n", err)
-				return
+func (db *MyRedis) RefreshData(appState *model.AppState) {
+	go func() {
+		for {
+			select {
+			case data1 := <-db.UpdateChan:
+				appState.Templates[data1.Name] = data1.Description
+				fmt.Printf("Updated appState; Key: %s, Template: %+v\n", data1.Name, data1.Description)
+			case data2 := <-db.DeleteChan:
+				delete(appState.Templates, data2)
+				fmt.Printf("Deleted from appState; Key: %s\n", data2)
 			}
-
-			// Unmarshal the value into a Template object
-			var template model.Data
-			if err := template.Description.UnmarshalBinary([]byte(value)); err != nil {
-				fmt.Printf("failed to unmarshal data: %s\n", err)
-				return
-			}
-
-			// Update the application's state with the new template
-			appState.Templates[key] = template.Description
-			fmt.Printf("FromRedis; Key: %s, Template: %+v\n", key, template)
-		}(key)
-	}
-
-	wg.Wait()
-
-	return nil
+		}
+	}()
 }
 
 
