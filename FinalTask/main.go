@@ -36,7 +36,7 @@ func main() {
 	appState := model.NewAppState()
 
 	//Router
-	r := router.InitializeRoutes(inMemory, mongoDBClient, redisClient, appState)
+	r := router.InitializeRoutes(inMemory, mongoDBClient, RedisClient, appState)
 	err = http.ListenAndServe(":8081", r)
 	if err != nil {
 		log.Fatal("Error starting the server : ", err)

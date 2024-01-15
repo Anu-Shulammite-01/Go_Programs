@@ -115,7 +115,7 @@ func (db *MongoDB) DeleteTemplate(data string)error {
 	return nil
 }
 
-func (db *MongoDB) RefreshData(appState *model.AppState/*,printChan chan bool*/) {
+func (db *MongoDB) RefreshData(appState *model.AppState) {
 	go func() {
 		for {
 			select {

@@ -41,8 +41,8 @@ func (h *BaseHandler)Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.inMemory.CreateTemplate(data)
-	// h.MongoDB.CreateTemplate(data)
-	// h.Redis.CreateTemplate(data)
+	h.MongoDB.CreateTemplate(data)
+	h.Redis.CreateTemplate(data)
 	json.NewEncoder(w).Encode(data)	
 
 }
@@ -62,9 +62,8 @@ func(h *BaseHandler)Update(w http.ResponseWriter, r *http.Request){
 		},
     }
 	h.inMemory.UpdateTemplate(data)
-	// h.MongoDB.UpdateTemplate(data)
-	// h.Redis.UpdateTemplate(data)
-
+	h.MongoDB.UpdateTemplate(data)
+	h.Redis.UpdateTemplate(data)
 	io.WriteString(w,"Updated!")
     json.NewEncoder(w).Encode(data)
 			
@@ -77,15 +76,15 @@ func (h *BaseHandler)Delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	data := vars["data"]
 	h.inMemory.DeleteTemplate(data)
-	// h.MongoDB.DeleteTemplate(data)
-	// h.Redis.DeleteTemplate(data)
+	h.MongoDB.DeleteTemplate(data)
+	h.Redis.DeleteTemplate(data)
 	json.NewEncoder(w).Encode("data")
 }
 
 func (h *BaseHandler)Refresh(w http.ResponseWriter, r *http.Request){
 	h.inMemory.RefreshData(h.AppState)
-	// h.Redis.RefreshData(h.AppState)
-	// h.MongoDB.RefreshData(h.AppState)
+	h.MongoDB.RefreshData(h.AppState)
+	h.Redis.RefreshData(h.AppState)	
 	fmt.Fprintf(w,"Done Refreshing Data!")
 }
 
