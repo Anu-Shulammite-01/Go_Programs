@@ -7,7 +7,6 @@ import (
 	"text/template"
 )
 
-// In-memory
 type InMemoryDB struct {
 	User map[string]model.Template
 	UpdateChan chan model.Data
@@ -35,8 +34,7 @@ func (db *InMemoryDB) CreateTemplate(data model.Data)error {
 	if err != nil {
 		return fmt.Errorf("failed to execute template: %v", err)
 	}
-
-	// Assuming model.Data has a Template field to store the processed template
+	
 	data.Description.Value = tpl.String()
 
 	for _, value := range db.User {
@@ -64,7 +62,6 @@ func (db *InMemoryDB) UpdateTemplate(data model.Data)error {
 		return fmt.Errorf("failed to execute template: %v", err)
 	}
 
-	// Assuming model.Data has a Template field to store the processed template
 	data.Description.Value = tpl.String()
 
 	_, ok := db.User[data.Name]
@@ -105,7 +102,6 @@ func (db *InMemoryDB) RefreshData(appState *model.AppState) {
 }
 
 func (db *InMemoryDB) TestData()([]string,error) {
-	//print all keys and values in map
 	for keys, values := range db.User{
 		fmt.Println(keys," : ",values)
 	}

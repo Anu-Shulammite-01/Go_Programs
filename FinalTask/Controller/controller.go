@@ -31,7 +31,7 @@ func NewBaseHandler(MongoDB *mongodb.MongoDB,Redis *redisDB.MyRedis,inMemory *in
 
 
 func (h *BaseHandler)Create(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/x-www-form-urlencode")
+	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Allow-Control-Allow-Methods","POST")
 
 	var data model.Data
@@ -40,15 +40,17 @@ func (h *BaseHandler)Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	h.inMemory.CreateTemplate(data)
 	h.MongoDB.CreateTemplate(data)
 	h.Redis.CreateTemplate(data)
 	json.NewEncoder(w).Encode(data)	
-
 }
+
 func(h *BaseHandler)Update(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Allow-Control-Allow-Methods","PUT")
+
 	vars := mux.Vars(r)
     stringData := vars["stringdata"]
 	newData1 := vars["newData1"]
@@ -61,20 +63,21 @@ func(h *BaseHandler)Update(w http.ResponseWriter, r *http.Request){
 			Value: newData2,
 		},
     }
+
 	h.inMemory.UpdateTemplate(data)
 	h.MongoDB.UpdateTemplate(data)
 	h.Redis.UpdateTemplate(data)
 	io.WriteString(w,"Updated!")
-    json.NewEncoder(w).Encode(data)
-			
+    json.NewEncoder(w).Encode(data)		
 }
 
 func (h *BaseHandler)Delete(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/x-www-form-urlencode")
+	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Allow-Control-Allow-Methods","DELETE")
 
 	vars := mux.Vars(r)
 	data := vars["data"]
+
 	h.inMemory.DeleteTemplate(data)
 	h.MongoDB.DeleteTemplate(data)
 	h.Redis.DeleteTemplate(data)
@@ -89,7 +92,8 @@ func (h *BaseHandler)Refresh(w http.ResponseWriter, r *http.Request){
 }
 
 func (h *BaseHandler)Test(w http.ResponseWriter, r *http.Request){
-	w.Header().Set("Content-Type","application/x-www-form-urlencode")
+	w.Header().Set("Content-Type","application/json")
+
 	test1,err := h.MongoDB.TestData()
 	if err!=nil{
 		fmt.Println(err)
@@ -99,11 +103,12 @@ func (h *BaseHandler)Test(w http.ResponseWriter, r *http.Request){
 	if err!=nil{
 		fmt.Println(err)
 	}
+
 	test3,err:=h.inMemory.TestData()
 	if err!=nil{
 		fmt.Println(err)
 	}
+
 	result := map[string]interface{}{"Mongo": test1,"Redis":test2,"In-Memory":test3}
 	json.NewEncoder(w).Encode(result)
 }
-

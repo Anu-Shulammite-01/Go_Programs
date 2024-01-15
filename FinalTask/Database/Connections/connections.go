@@ -23,7 +23,6 @@ func ConnectMongoDB() (*mongodb.MongoDB,error) {
 	return &mongodb.MongoDB{Client:client},nil
 }
 
-
 // Close the MongoDB connection
 func CloseConnection(c *mongodb.MongoDB)error{
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -35,6 +34,7 @@ func CloseConnection(c *mongodb.MongoDB)error{
 	}
 	return nil
 }
+
 //redis connection
 func ConnectRedis()(*redisDB.MyRedis,error){
 	client := redis.NewClient(&redis.Options{
@@ -50,6 +50,7 @@ func ConnectRedis()(*redisDB.MyRedis,error){
 	fmt.Printf("Connected to Redis Server : %s\n", pong)
 	return &redisDB.MyRedis{Client:client},nil
 }
+
 //close redis connection
 func CloseRedisConn(c *redisDB.MyRedis)error{
 	if err := c.Client.Close(); err != nil {
@@ -58,4 +59,3 @@ func CloseRedisConn(c *redisDB.MyRedis)error{
 	fmt.Println("Closed Redis Connection Successfully.")
 	return nil
 }
-

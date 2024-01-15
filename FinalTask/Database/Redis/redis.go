@@ -11,7 +11,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// Redis
 type MyRedis struct {
 	Client *redis.Client
 	UpdateChan chan model.Data
@@ -40,7 +39,6 @@ func (db *MyRedis) CreateTemplate(data model.Data)error {
 		return fmt.Errorf("failed to execute template: %v", err)
 	}
 
-	// Assuming model.Data has a Template field to store the processed template
 	data.Description.Value = tpl.String()
 
 	if _,err := db.Client.Get(context.Background(), data.Name).Result(); err == redis.Nil {
@@ -74,7 +72,6 @@ func (db *MyRedis) UpdateTemplate(data model.Data)error {
 		return fmt.Errorf("failed to execute template: %v", err)
 	}
 
-	// Assuming model.Data has a Template field to store the processed template
 	data.Description.Value = tpl.String()
 
 	ctx := context.Background()
@@ -121,7 +118,6 @@ func (db *MyRedis) RefreshData(appState *model.AppState) {
 
 
 func (db *MyRedis) TestData() ([]string, error) {
-	//want both keys and values
 	ctx := context.Background()
 	keys, err := db.Client.Keys(ctx, "*").Result()
 	if err != nil {

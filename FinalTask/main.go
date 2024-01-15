@@ -13,6 +13,7 @@ import (
 )
 func main() {
 	fmt.Println("API Example")
+	
 	//MongoDB
 	mongoClient,err := connections.ConnectMongoDB()
 	if err != nil{

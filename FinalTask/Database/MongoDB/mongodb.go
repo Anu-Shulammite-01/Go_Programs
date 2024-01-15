@@ -13,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// MongoDB
 type MongoDB struct {
 	Client *mongo.Client
 	UpdateChan chan model.Data
@@ -29,7 +28,7 @@ func NewMongoDB(client *MongoDB) *MongoDB {
 }
 
 func (db *MongoDB) CreateTemplate(data model.Data)error {
-	// Create a new template with some name
+	// Create a new template 
 	tmpl := data.Description.Value
 	t, err := template.New("template").Parse(tmpl)
 	if err != nil {
@@ -43,12 +42,12 @@ func (db *MongoDB) CreateTemplate(data model.Data)error {
 		return fmt.Errorf("failed to execute template: %v", err)
 	}
 
-	// Assuming model.Data has a Template field to store the processed template
 	data.Description.Value = tpl.String()
 
 	collection := db.Client.Database("UserInfo").Collection("Details")
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
+	
 	//check if user already exist or not
 	count, err := collection.CountDocuments(ctx, bson.D{{Key: "Name", Value: data.Name}})
 	if err != nil {
@@ -68,7 +67,7 @@ func (db *MongoDB) CreateTemplate(data model.Data)error {
 
 
 func (db *MongoDB) UpdateTemplate(data model.Data)error {
-	// Create a new template with some name
+	// Create a new template
 	tmpl := data.Description.Value
 	t, err := template.New("template").Parse(tmpl)
 	if err != nil {
@@ -82,7 +81,6 @@ func (db *MongoDB) UpdateTemplate(data model.Data)error {
 		return fmt.Errorf("failed to execute template: %v", err)
 	}
 
-	// Assuming model.Data has a Template field to store the processed template
 	data.Description.Value = tpl.String()
 	
 	collection := db.Client.Database("UserInfo").Collection("Details")

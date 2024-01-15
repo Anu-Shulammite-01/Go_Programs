@@ -12,13 +12,13 @@ import (
 
 
 func InitializeRoutes(inMemory *inmemory.InMemoryDB, mongoClient *mongodb.MongoDB, redisClient *redisDB.MyRedis,appState *model.AppState) *mux.Router {
-	// Create a new BaseHandler with the provided db, mongoClient, and redisClient
+	// Creating a new BaseHandler with the provided inmemory, mongoClient, and redisClient
 	handler := controllers.NewBaseHandler(mongoClient, redisClient, inMemory, appState)
 
-	// Create a new router
+	// Creating a new router
 	r := mux.NewRouter()
 
-	// Set up your routes
+	// Setting up the routes
 	r.HandleFunc("/create", handler.Create).Methods("POST")
 	r.HandleFunc("/update/{stringdata}/{newData1}/{newData2}/", handler.Update).Methods("PUT")
 	r.HandleFunc("/delete/{data}/", handler.Delete).Methods("DELETE")
