@@ -45,7 +45,7 @@ func (db *MongoDB) CreateTemplate(data model.Data)error {
 	data.Description.Value = tpl.String()
 
 	collection := db.Client.Database("UserInfo").Collection("Details")
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	
 	//check if user already exist or not
@@ -84,7 +84,7 @@ func (db *MongoDB) UpdateTemplate(data model.Data)error {
 	data.Description.Value = tpl.String()
 	
 	collection := db.Client.Database("UserInfo").Collection("Details")
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	filter := bson.D{{Key:"name",Value: data.Name}}
 	update := bson.D{
@@ -98,7 +98,7 @@ func (db *MongoDB) UpdateTemplate(data model.Data)error {
 
 func (db *MongoDB) DeleteTemplate(data string)error {
 	collection := db.Client.Database("UserInfo").Collection("Details")
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	result,err := collection.DeleteOne(ctx,bson.D{{Key: "name",Value : data}})
 	if err != nil {
