@@ -6,24 +6,14 @@ import (
 )
 
 type Template struct {
-	Key   string `json:"Key"`
-	Value string `json:"Value"`
+	Key   string `json:"Key" validate:"required"`
+	Value string `json:"Value" validate:"required"`
 }
 
 type Data struct {
 	ID          primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Name        string             `json:"name,omitempty" `
+	Name        string             `json:"name,omitempty" validate:"required,min=3,max=20" `
 	Description Template           `json:"description,omitempty"`
-}
-
-type AppState struct {
-    Templates map[string]Template
-}
-
-func NewAppState() *AppState {
-    return &AppState{
-        Templates: make(map[string]Template),
-    }
 }
 
 func (t Template) MarshalBinary() ([]byte, error) {

@@ -1,11 +1,12 @@
 package mongodb
 
 import (
+	inmemory "TemplateUserDetailsTask/Database/In-Memory"
 	model "TemplateUserDetailsTask/Model"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"text/template"
 	"time"
 
@@ -15,19 +16,22 @@ import (
 
 type MongoDB struct {
 	Client *mongo.Client
-	UpdateChan chan model.Data
-	DeleteChan chan string
 }
 
 func NewMongoDB(client *MongoDB) *MongoDB {
 	return &MongoDB{
 		Client:      client.Client,
-		UpdateChan: make(chan model.Data,100),
-		DeleteChan: make(chan string,100),
 	}
 }
 
-func (db *MongoDB) CreateTemplate(data model.Data)error {
+func (db *MongoDB) CreateTemplate(data model.Data) error {
+	// Check if data is empty
+	if data.Name == "" {
+		return errors.New("name cannot be empty")
+	}
+	//check if user data.Name already exist or not
+	
+
 	// Create a new template 
 	tmpl := data.Description.Value
 	t, err := template.New("template").Parse(tmpl)
@@ -48,22 +52,24 @@ func (db *MongoDB) CreateTemplate(data model.Data)error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	
-	//check if user already exist or not
-	count, err := collection.CountDocuments(ctx, bson.D{{Key: "Name", Value: data.Name}})
+	// Check if user already exists or not
+	count, err := collection.CountDocuments(ctx, bson.D{{Key: "name", Value: data.Name}})
 	if err != nil {
 		return fmt.Errorf("failed to check if user exists: %v", err)
 	}
-	if count == 0 {
-		res, err := collection.InsertOne(ctx, data)
-		if err != nil {
-			return fmt.Errorf("failed to create new user: %v", err)
-		}
-		fmt.Println("Created new Template with ID: ", res.InsertedID)
-	}else{
-		log.Printf("The User %s is already exists.", data.Name)
+	if count > 0 {
+		return errors.New("user already exists")
 	}
+
+	// Insert the new user
+	res, err := collection.InsertOne(ctx, data)
+	if err != nil {	
+		return fmt.Errorf("failed to create new user: %v", err)
+	}
+	fmt.Println("Created new Template with ID: ", res.InsertedID)
 	return nil
 }
+
 
 
 func (db *MongoDB) UpdateTemplate(data model.Data)error {
@@ -92,7 +98,6 @@ func (db *MongoDB) UpdateTemplate(data model.Data)error {
 	}
 	_ = collection.FindOneAndUpdate(ctx,filter,update)
 	fmt.Println("Updated records in MongoDB")
-	db.UpdateChan <- data
 	return nil
 }
 
@@ -106,26 +111,33 @@ func (db *MongoDB) DeleteTemplate(data string)error {
 	}
 	if result.DeletedCount > 0 {
 		fmt.Printf("Successfully deleted the record of %v\n", data)
-		db.DeleteChan <- data
 	} else {
 		fmt.Printf("No Record found for deletion.\n")
 	}
 	return nil
 }
 
-func (db *MongoDB) RefreshData(appState *model.AppState) {
-	go func() {
-		for {
-			select {
-			case data1 := <-db.UpdateChan:
-				appState.Templates[data1.Name] = data1.Description
-				fmt.Printf("Updated appState; Key: %s, Template: %+v\n", data1.Name, data1.Description)
-			case data2 := <-db.DeleteChan:
-				delete(appState.Templates, data2)
-				fmt.Printf("Deleted from appState; Key: %s\n", data2)
-			}
+func (db *MongoDB) RefreshData(inMemoryDB *inmemory.InMemoryDB, data string)error{
+		// Context
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		
+		collection := db.Client.Database("UserInfo").Collection("Details")
+		filter := bson.D{{Key:"name",Value: data}}
+
+		// Retrieve the document from MongoDB
+		var result model.Data
+		err := collection.FindOne(ctx, filter).Decode(&result)
+		if err != nil {
+			return fmt.Errorf("error getting data from MongoDB: %s", err)
 		}
-	}()
+	
+		// Write the value to the in-memory database
+		inMemoryDB.User[result.Name] = result.Description
+	
+		fmt.Printf("Refreshed in-memory database; Key: %s, Value: %s\n", result.Name, result.Description.Key+":"+result.Description.Value)
+	
+	return nil
 }
 
 func (db *MongoDB) TestData()([]string,error) {

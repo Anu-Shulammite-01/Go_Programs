@@ -5,7 +5,6 @@ import (
 	inmemory "TemplateUserDetailsTask/Database/In-Memory"
 	mongodb "TemplateUserDetailsTask/Database/MongoDB"
 	redisDB "TemplateUserDetailsTask/Database/Redis"
-	model "TemplateUserDetailsTask/Model"
 	router "TemplateUserDetailsTask/Router"
 	"fmt"
 	"log"
@@ -33,11 +32,8 @@ func main() {
 	//In-Memory
 	inMemory := inmemory.NewInMemoryDB()
 	
-	//AppState
-	appState := model.NewAppState()
-
 	//Router
-	r := router.InitializeRoutes(inMemory, mongoDBClient, RedisClient, appState)
+	r := router.InitializeRoutes(inMemory, mongoDBClient, RedisClient)
 	err = http.ListenAndServe(":8081", r)
 	if err != nil {
 		log.Fatal("Error starting the server : ", err)

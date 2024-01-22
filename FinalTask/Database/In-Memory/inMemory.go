@@ -3,25 +3,26 @@ package inmemory
 import (
 	model "TemplateUserDetailsTask/Model"
 	"bytes"
+	"errors"
 	"fmt"
 	"text/template"
 )
 
 type InMemoryDB struct {
 	User map[string]model.Template
-	UpdateChan chan model.Data
-	DeleteChan chan string
 }
 
 func NewInMemoryDB() *InMemoryDB {
 	return &InMemoryDB{
 		User: make(map[string]model.Template),
-		UpdateChan: make(chan model.Data,100),
-		DeleteChan: make(chan string,100),
 	}
 }
 
 func (db *InMemoryDB) CreateTemplate(data model.Data)error {
+	if data.Name == "" {
+		return errors.New("name cannot be empty")
+	}
+	
 	tmpl := data.Description.Value
 	t, err := template.New("template").Parse(tmpl)
 	if err != nil {
@@ -37,8 +38,8 @@ func (db *InMemoryDB) CreateTemplate(data model.Data)error {
 	
 	data.Description.Value = tpl.String()
 
-	for _, value := range db.User {
-		if value.Key == data.Name {
+	for key := range db.User {
+		if key == data.Name {
 			return fmt.Errorf("user already exists")
 		}
 	}
@@ -70,7 +71,6 @@ func (db *InMemoryDB) UpdateTemplate(data model.Data)error {
 	}
 	db.User[data.Name] = data.Description
 	fmt.Printf("Successfully updated the details of %s.\n", data.Name)
-	db.UpdateChan <- data
 	return nil
 }
 
@@ -81,30 +81,17 @@ func (db *InMemoryDB) DeleteTemplate(data string)error {
 	}else{
 		delete(db.User, data)
 		fmt.Printf("Successfully deleted %v.\n", data)
-		db.DeleteChan <- data
+
 	}
 	return nil
 }
 
-func (db *InMemoryDB) RefreshData(appState *model.AppState) {
-	go func() {
-		for {
-			select {
-			case data1 := <-db.UpdateChan:
-				appState.Templates[data1.Name] = data1.Description
-				fmt.Printf("Updated appState; Key: %s, Template: %+v\n", data1.Name, data1.Description)
-			case data2 := <-db.DeleteChan:
-				delete(appState.Templates, data2)
-				fmt.Printf("Deleted from appState; Key: %s\n", data2)
-			}
-		}
-	}()
-}
+
 
 func (db *InMemoryDB) TestData()([]string,error) {
-	for keys, values := range db.User{
-		fmt.Println(keys," : ",values)
-	}
+	// for keys, values := range db.User{
+	// 	fmt.Println(keys," : ",values)
+	// }
 	var results []string
 	for key,value := range db.User {
 		results = append(results, key+" : "+value.Key+" = "+value.Value)
