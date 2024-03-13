@@ -14,5 +14,5 @@ func(c *CircularQueue) Enqueue(i int){
 		return;
 	}
 	c.items = append(c.items, i)
-	
+	c.tail++
 }
