@@ -59,3 +59,4 @@ func CloseRedisConn(c *redisDB.MyRedis)error{
 	fmt.Println("Closed Redis Connection Successfully.")
 	return nil
 }
+
